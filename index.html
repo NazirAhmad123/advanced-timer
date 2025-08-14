@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Countdown Timer</title>
+  <!-- Tailwind CSS CDN for styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
+
+    .font-inter {
+      font-family: 'Inter', sans-serif;
+    }
+
+    @keyframes pulse-animation {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.01);
+        opacity: 0.8;
+      }
+    }
+
+    .animate-pulse-effect {
+      animation: pulse-animation 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .progress-bar-container {
+      height: 10px;
+      width: 100%;
+      background-color: #3f3f46;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-image: linear-gradient(to right, #0ea5e9, #38bdf8);
+      transition: width 0.9s linear;
+    }
+
+    .animate-bg-flash {
+      animation: bg-flash 0.5s linear infinite;
+    }
+
+    @keyframes bg-flash {
+
+      0%,
+      100% {
+        background-color: #1e293b;
+      }
+
+      50% {
+        background-color: #ef4444;
+      }
+    }
+
+    .light-mode {
+      background-color: #f1f5f9;
+      color: #1e293b;
+    }
+
+    .light-mode .bg-slate-800 {
+      background-color: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    .light-mode .bg-slate-900 {
+      background-color: #f8fafc;
+    }
+
+    .light-mode .bg-slate-700 {
+      background-color: #f1f5f9;
+      border-color: #e2e8f0;
+    }
+
+    .light-mode .text-slate-100 {
+      color: #1e293b;
+    }
+
+    .light-mode .text-slate-200 {
+      color: #334155;
+    }
+
+    .light-mode .text-slate-400 {
+      color: #64748b;
+    }
+
+    .light-mode .progress-bar-container {
+      background-color: #e2e8f0;
+    }
+
+    .light-mode .progress-bar {
+      background-image: linear-gradient(to right, #0ea5e9, #38bdf8);
+    }
+
+    .volume-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100px;
+      height: 8px;
+      background: #4b5563;
+      outline: none;
+      border-radius: 9999px;
+      transition: opacity .2s;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #38bdf8;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+
+    .volume-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #38bdf8;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+
+    /* Drag and Drop Styling */
+    .dragging {
+      opacity: 0.5;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-4 font-inter transition-colors duration-300">
+  <div class="fixed top-4 right-4 flex space-x-2">
+    <button id="theme-toggle" class="p-2 rounded-full bg-slate-700 hover:bg-slate-600 text-slate-100 transition-colors shadow-md">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+    </button>
+    <button id="fullscreen-toggle" class="p-2 rounded-full bg-slate-700 hover:bg-slate-600 text-slate-100 transition-colors shadow-md">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="bg-slate-800 p-8 sm:p-12 rounded-3xl shadow-2xl w-full max-w-5xl flex flex-col lg:flex-row gap-8 lg:gap-12 border border-slate-700 transition-colors duration-300">
+
+    <!-- Controls Panel (Left Side) -->
+    <div class="flex flex-col space-y-8 w-full lg:w-1/2">
+      <div class="flex flex-col space-y-4">
+        <h1 class="text-3xl sm:text-4xl font-bold text-slate-200">Advanced Timer</h1>
+        <p class="text-slate-400">Create, manage, and focus with beautiful timers.</p>
+      </div>
+
+      <!-- Timer Creation Input -->
+      <form id="timer-form" class="flex items-center gap-2 w-full">
+        <input type="text" id="timer-input" class="flex-1 p-3 rounded-xl bg-slate-700 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors duration-200 font-medium" placeholder="e.g. 25:00 Work or 5m Break" />
+        <button type="submit" class="p-3 bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-800">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4z" />
+          </svg>
+        </button>
+      </form>
+
+      <!-- Presets Section -->
+      <div class="flex flex-wrap items-center gap-4 w-full">
+        <button data-label="Pomodoro" data-minutes="25" class="preset-btn px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl shadow-md transition-all duration-200 transform hover:scale-105">
+          Pomodoro (25)
+        </button>
+        <button data-label="Short Break" data-minutes="5" class="preset-btn px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-medium rounded-xl shadow-md transition-all duration-200 transform hover:scale-105">
+          Short Break (5)
+        </button>
+        <button data-label="Egg Timer" data-minutes="3" class="preset-btn px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-xl shadow-md transition-all duration-200 transform hover:scale-105">
+          Egg (3)
+        </button>
+        <button data-label="Workout" data-minutes="15" class="preset-btn px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl shadow-md transition-all duration-200 transform hover:scale-105">
+          Workout (15)
+        </button>
+      </div>
+
+      <!-- Global Controls & Settings -->
+      <div class="flex flex-col space-y-4 p-4 rounded-xl bg-slate-900 border border-slate-700">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-bold text-slate-200">Global Controls</h3>
+          <div class="flex space-x-2">
+            <button id="pause-all-btn" class="p-2 rounded-full bg-slate-700 hover:bg-slate-600 text-slate-100 shadow-md">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <button id="start-all-btn" class="p-2 rounded-full bg-slate-700 hover:bg-slate-600 text-slate-100 shadow-md">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="flex justify-between items-center">
+          <label for="sound-select" class="text-sm font-medium text-slate-400">Alarm Sound:</label>
+          <div class="flex items-center space-x-2">
+            <select id="sound-select" class="p-2 rounded-lg bg-slate-800 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="https://cdn.pixabay.com/audio/2021/08/04/audio_34b35e80d4.mp3">Classic</option>
+              <option value="https://cdn.pixabay.com/audio/2022/02/08/audio_650b86a512.mp3">Chimes</option>
+              <option value="https://cdn.pixabay.com/audio/2022/03/10/audio_03d92476d0.mp3">Digital</option>
+              <option value="https://cdn.pixabay.com/audio/2021/08/27/audio_3d19114f14.mp3">Bell</option>
+            </select>
+            <button id="preview-sound-btn" class="p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-100 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="flex justify-between items-center">
+          <label for="volume-slider" class="text-sm font-medium text-slate-400">Volume:</label>
+          <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" class="volume-slider" />
+        </div>
+        <button id="clear-all-btn" class="w-full px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 transform hover:scale-105">
+          Clear All Timers
+        </button>
+      </div>
+
+      <!-- History Log -->
+      <div class="w-full pt-4 border-t border-slate-700">
+        <h2 class="text-2xl font-bold text-slate-200 mb-4">History</h2>
+        <div id="history-container" class="w-full max-h-40 overflow-y-auto space-y-2 pr-2">
+          <p id="no-history-message" class="text-slate-400 text-center">No completed timers yet.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Timers Panel (Right Side) -->
+    <div class="flex flex-col space-y-8 w-full lg:w-1/2">
+      <div id="timers-container" class="w-full max-h-[70vh] lg:max-h-full overflow-y-auto space-y-4 pr-2">
+        <p id="no-timers-message" class="text-slate-400 text-center text-lg">No timers yet. Add one to begin!</p>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-slate-900 bg-opacity-75 flex items-center justify-center p-4 hidden">
+      <div class="bg-slate-800 p-6 rounded-xl shadow-xl text-center space-y-4 border border-slate-700">
+        <p class="text-lg font-medium text-slate-200">Are you sure you want to delete this timer?</p>
+        <div class="flex justify-center space-x-4">
+          <button id="confirm-delete-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105">Delete</button>
+          <button id="cancel-delete-btn" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full-screen Visualizer Modal -->
+    <div id="visualizer-modal" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 hidden flex-col space-y-8">
+      <div id="visualizer-content" class="text-center">
+        <h2 id="visualizer-label" class="text-4xl font-bold text-slate-200 mb-4"></h2>
+        <div id="visualizer-timer-display" class="text-8xl font-extrabold text-sky-400"></div>
+      </div>
+      <button id="close-visualizer-btn" class="p-4 rounded-full bg-slate-700 hover:bg-slate-600 text-slate-100 shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z" />
+        </svg>
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    const body = document.body;
+    const timersContainer = document.getElementById('timers-container');
+    const timerForm = document.getElementById('timer-form');
+    const timerInput = document.getElementById('timer-input');
+    const presetBtns = document.querySelectorAll('.preset-btn');
+    const noTimersMessage = document.getElementById('no-timers-message');
+    const soundSelect = document.getElementById('sound-select');
+    const volumeSlider = document.getElementById('volume-slider');
+    const previewSoundBtn = document.getElementById('preview-sound-btn');
+    const clearAllBtn = document.getElementById('clear-all-btn');
+    const pauseAllBtn = document.getElementById('pause-all-btn');
+    const startAllBtn = document.getElementById('start-all-btn');
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const fullscreenToggleBtn = document.getElementById('fullscreen-toggle');
+    const confirmationModal = document.getElementById('confirmation-modal');
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+    const historyContainer = document.getElementById('history-container');
+    const noHistoryMessage = document.getElementById('no-history-message');
+    const visualizerModal = document.getElementById('visualizer-modal');
+    const visualizerLabel = document.getElementById('visualizer-label');
+    const visualizerTimerDisplay = document.getElementById('visualizer-timer-display');
+    const closeVisualizerBtn = document.getElementById('close-visualizer-btn');
+    const defaultTitle = document.title;
+    let timers = [];
+    let completedTimers = [];
+    let intervalIds = {};
+    const audioCache = {};
+    let timerToDelete = null;
+    let activeVisualizerId = null;
+
+    function getAlarmSound(url) {
+      if (!audioCache[url]) {
+        audioCache[url] = new Audio(url);
+        audioCache[url].loop = true;
+        audioCache[url].volume = volumeSlider.value;
+      }
+      return audioCache[url];
+    }
+
+    function loadState() {
+      const savedTimers = JSON.parse(localStorage.getItem('advanced-timers') || '[]');
+      if (savedTimers) {
+        timers = savedTimers.map(t => ({
+          ...t,
+          remaining: t.isRunning ? Math.max(0, Math.floor((new Date(t.finishTime) - new Date()) / 1000)) : t.remaining,
+          isRunning: false,
+          isFinished: false,
+          finishTime: null,
+          isEditing: false,
+          mode: t.mode || 'countdown',
+        }));
+      }
+      const savedHistory = JSON.parse(localStorage.getItem('advanced-timers-history') || '[]');
+      completedTimers = savedHistory;
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'light') {
+        body.classList.add('light-mode');
+      }
+      const savedVolume = localStorage.getItem('volume');
+      if (savedVolume !== null) {
+        volumeSlider.value = savedVolume;
+        for (const url in audioCache) {
+          audioCache[url].volume = savedVolume;
+        }
+      }
+      // Load state from URL
+      if (window.location.hash) {
+        try {
+          const decoded = atob(window.location.hash.substring(1));
+          const urlState = JSON.parse(decoded);
+          if (urlState.timers) {
+            timers = urlState.timers;
+          }
+        } catch (e) {
+          console.error("Failed to parse URL state", e);
+        }
+      }
+      renderTimers();
+      renderHistory();
+      updateTitle();
+    }
+
+    function saveState() {
+      localStorage.setItem('advanced-timers', JSON.stringify(timers.map(t => ({
+        id: t.id,
+        label: t.label,
+        notes: t.notes,
+        total: t.total,
+        remaining: t.remaining,
+        isRunning: t.isRunning,
+        isFinished: t.isFinished,
+        soundUrl: t.soundUrl,
+        finishTime: t.finishTime,
+        mode: t.mode,
+      }))));
+      localStorage.setItem('advanced-timers-history', JSON.stringify(completedTimers));
+      localStorage.setItem('volume', volumeSlider.value);
+      // Update URL hash
+      const stateToSave = {
+        timers: timers
+      };
+      window.location.hash = btoa(JSON.stringify(stateToSave));
+    }
+
+    function updateTitle() {
+      const runningTimer = timers.find(t => t.isRunning);
+      document.title = runningTimer ? `${formatTime(runningTimer.remaining)} - ${runningTimer.label}` : defaultTitle;
+    }
+
+    function hapticFeedback() {
+      if (window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(10);
+      }
+    }
+
+    function addTimer(label, minutes, seconds) {
+      const totalSeconds = (minutes * 60) + seconds;
+      if (totalSeconds <= 0) return;
+      const newTimer = {
+        id: Date.now(),
+        label: label || 'New Timer',
+        notes: '',
+        total: totalSeconds,
+        remaining: totalSeconds,
+        isRunning: false,
+        isFinished: false,
+        soundUrl: soundSelect.value,
+        finishTime: null,
+        isEditing: false,
+        mode: 'countdown',
+        startTime: null
+      };
+      timers.push(newTimer);
+      saveState();
+      renderTimers();
+    }
+
+    function formatTime(totalSeconds) {
+      const isNegative = totalSeconds < 0;
+      const absSeconds = Math.abs(totalSeconds);
+      const minutes = Math.floor(absSeconds / 60);
+      const seconds = absSeconds % 60;
+      const sign = isNegative ? '-' : '';
+      return `${sign}${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function renderHistory() {
+      historyContainer.innerHTML = '';
+      if (completedTimers.length === 0) {
+        noHistoryMessage.style.display = 'block';
+        return;
+      }
+      noHistoryMessage.style.display = 'none';
+      completedTimers.forEach(h => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'p-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 transition-colors duration-200';
+        historyItem.innerHTML = `
+                    <p class="font-medium">${h.label}</p>
+                    ${h.notes ? `<p class="text-sm text-slate-400">${h.notes}</p>` : ''}
+                    <p class="text-xs text-slate-500">${new Date(h.timestamp).toLocaleString()}</p>
+                `;
+        historyContainer.appendChild(historyItem);
+      });
+    }
+
+    function renderTimers() {
+      timersContainer.innerHTML = '';
+      if (timers.length === 0) {
+        noTimersMessage.style.display = 'block';
+        return;
+      }
+      noTimersMessage.style.display = 'none';
+      timers.forEach(timer => {
+        const timerElement = document.createElement('div');
+        timerElement.className = 'timer-item bg-slate-900 p-6 rounded-2xl shadow-xl flex flex-col space-y-4 relative transition-colors duration-300 transform hover:scale-[1.01]';
+        timerElement.draggable = true;
+        timerElement.dataset.id = timer.id;
+        if (timer.isFinished) {
+          timerElement.classList.add('animate-bg-flash');
+        } else {
+          timerElement.classList.remove('animate-bg-flash');
+        }
+        let contentHTML = '';
+        if (timer.isEditing) {
+          contentHTML = `
+                        <div class="flex items-center gap-4">
+                            <input type="text" value="${timer.label}" class="timer-label text-xl font-bold bg-transparent text-slate-200 focus:outline-none flex-1" />
+                            <div class="flex items-center space-x-2">
+                                <input type="number" value="${Math.floor(timer.total / 60)}" class="edit-minutes w-16 p-2 text-center rounded-lg bg-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500" min="0" />
+                                <span class="text-slate-400">min</span>
+                                <input type="number" value="${timer.total % 60}" class="edit-seconds w-16 p-2 text-center rounded-lg bg-slate-700 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500" min="0" max="59" />
+                                <span class="text-slate-400">sec</span>
+                            </div>
+                        </div>
+                        <textarea class="notes-input w-full p-2 text-sm rounded-lg bg-slate-700 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors duration-200" placeholder="Add notes for this timer..." rows="2">${timer.notes}</textarea>
+                    `;
+        } else {
+          contentHTML = `
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-slate-200">${timer.label}</h3>
+                            <div class="flex items-center gap-2">
+                                <button class="mode-toggle-btn p-1 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors text-slate-100" title="Toggle Countdown/Count-up">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        ${timer.mode === 'countdown' ? 
+                                            '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />' :
+                                            '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />'
+                                        }
+                                    </svg>
+                                </button>
+                                <button class="visualizer-btn p-1 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors text-slate-100" title="Full-screen Visualizer">
+                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 5a2 2 0 012-2h4a1 1 0 010 2H5v4a1 1 0 01-2 0V5zm10-2h4a2 2 0 012 2v4a1 1 0 11-2 0V5h-4a1 1 0 110-2zm-2 4a1 1 0 100 2h2a1 1 0 100-2h-2zm-6 3a1 1 0 110 2H3v4a2 2 0 002 2h4a1 1 0 000-2H5v-4a1 1 0 00-2 0zm10 4a1 1 0 100 2h4a1 1 0 100-2h-4z" clip-rule="evenodd" /></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <p class="text-5xl font-extrabold text-sky-400 transition-all duration-300">
+                                ${formatTime(timer.remaining)}
+                            </p>
+                            <div class="flex space-x-2">
+                                <button class="add-time-btn p-2 text-xs rounded-full bg-slate-700 hover:bg-slate-600 transition-colors text-slate-100" data-time="5">+5s</button>
+                                <button class="add-time-btn p-2 text-xs rounded-full bg-slate-700 hover:bg-slate-600 transition-colors text-slate-100" data-time="10">+10s</button>
+                                <button class="add-time-btn p-2 text-xs rounded-full bg-slate-700 hover:bg-slate-600 transition-colors text-slate-100" data-time="30">+30s</button>
+                            </div>
+                        </div>
+                        <textarea class="notes-input w-full p-2 text-sm rounded-lg bg-slate-700 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors duration-200" placeholder="Add notes for this timer..." rows="2">${timer.notes}</textarea>
+                    `;
+        }
+        timerElement.innerHTML = contentHTML;
+        if (!timer.isEditing) {
+          const notesInput = timerElement.querySelector('.notes-input');
+          notesInput.addEventListener('change', (e) => {
+            timer.notes = e.target.value;
+            saveState();
+          });
+          const modeToggleBtn = timerElement.querySelector('.mode-toggle-btn');
+          modeToggleBtn.addEventListener('click', () => {
+            timer.mode = timer.mode === 'countdown' ? 'countup' : 'countdown';
+            if (timer.isRunning) {
+              pauseTimer(timer.id);
+              startTimer(timer.id);
+            } else {
+              renderTimers();
+            }
+            hapticFeedback();
+          });
+          const visualizerBtn = timerElement.querySelector('.visualizer-btn');
+          visualizerBtn.addEventListener('click', () => {
+            showVisualizer(timer.id);
+            hapticFeedback();
+          });
+        }
+        const progressBarContainer = document.createElement('div');
+        progressBarContainer.className = 'progress-bar-container';
+        const progressBar = document.createElement('div');
+        progressBar.className = 'progress-bar';
+        progressBar.style.width = `${(timer.total > 0 && timer.remaining >= 0) ? (timer.remaining / timer.total) * 100 : 0}%`;
+        progressBarContainer.appendChild(progressBar);
+        if (timer.mode === 'countup') {
+          progressBar.style.width = `100%`; // Progress bar is not used for countup mode
+        } else {
+          timerElement.appendChild(progressBarContainer);
+        }
+        const controls = document.createElement('div');
+        controls.className = 'flex space-x-2 mt-4';
+        let controlButtonsHTML = '';
+        if (timer.isEditing) {
+          controlButtonsHTML = `
+                        <button class="save-btn flex-1 px-4 py-2 font-bold rounded-xl shadow transition-all duration-200 transform hover:scale-105 bg-green-500 hover:bg-green-600 text-white">Save</button>
+                        <button class="cancel-btn flex-1 px-4 py-2 font-bold rounded-xl shadow transition-all duration-200 transform hover:scale-105 bg-slate-600 hover:bg-slate-700 text-white">Cancel</button>
+                    `;
+        } else if (timer.isFinished) {
+          controlButtonsHTML = `
+                        <button class="start-pause-btn flex-1 p-3 font-bold rounded-xl shadow transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 bg-green-500 hover:bg-green-600 text-white">Restart</button>
+                        <button class="stop-alarm-btn flex-1 p-3 font-bold rounded-xl shadow transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900 bg-red-600 hover:bg-red-700 text-white">Stop</button>
+                        <button class="delete-btn p-3 font-bold rounded-xl shadow transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900 bg-red-600 hover:bg-red-700 text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                    `;
+        } else {
+          const icon = timer.isRunning ? 'M10 18a8 8 0 100-16 8 8 0 000 16zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z' : 'M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z';
+          controlButtonsHTML = `
+                        <button class="start-pause-btn p-3 font-bold rounded-full shadow transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${timer.isRunning ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600'} text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="${icon}" clip-rule="evenodd" /></svg>
+                        </button>
+                        <button class="edit-btn p-3 font-bold rounded-full shadow transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 bg-sky-600 hover:bg-sky-700 text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button>
+                        <button class="delete-btn p-3 font-bold rounded-full shadow transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900 bg-red-600 hover:bg-red-700 text-white"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                    `;
+        }
+        controls.innerHTML = controlButtonsHTML;
+        // Add event listeners for new buttons and drag/drop
+        const startPauseBtn = controls.querySelector('.start-pause-btn');
+        if (startPauseBtn) {
+          startPauseBtn.addEventListener('click', () => {
+            hapticFeedback();
+            if (timer.isFinished) {
+              resetTimer(timer.id);
+              startTimer(timer.id);
+            } else if (timer.isRunning) {
+              pauseTimer(timer.id);
+            } else {
+              startTimer(timer.id);
+            }
+          });
+        }
+        const deleteBtn = controls.querySelector('.delete-btn');
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', () => {
+            showConfirmationModal(timer.id);
+            hapticFeedback();
+          });
+        }
+        const editBtn = controls.querySelector('.edit-btn');
+        if (editBtn) {
+          editBtn.addEventListener('click', () => {
+            timer.isEditing = true;
+            renderTimers();
+            hapticFeedback();
+          });
+        }
+        const saveBtn = controls.querySelector('.save-btn');
+        if (saveBtn) {
+          saveBtn.addEventListener('click', () => {
+            const newMinutes = parseInt(timerElement.querySelector('.edit-minutes').value) || 0;
+            const newSeconds = parseInt(timerElement.querySelector('.edit-seconds').value) || 0;
+            timer.total = (newMinutes * 60) + newSeconds;
+            timer.remaining = timer.total;
+            timer.isEditing = false;
+            saveState();
+            renderTimers();
+            hapticFeedback();
+          });
+        }
+        const cancelBtn = controls.querySelector('.cancel-btn');
+        if (cancelBtn) {
+          cancelBtn.addEventListener('click', () => {
+            timer.isEditing = false;
+            renderTimers();
+            hapticFeedback();
+          });
+        }
+        const stopAlarmBtn = controls.querySelector('.stop-alarm-btn');
+        if (stopAlarmBtn) {
+          stopAlarmBtn.addEventListener('click', () => {
+            getAlarmSound(timer.soundUrl).pause();
+            getAlarmSound(timer.soundUrl).currentTime = 0;
+            timer.isFinished = false;
+            saveState();
+            renderTimers();
+            hapticFeedback();
+          });
+        }
+        const quickAddButtons = timerElement.querySelectorAll('.add-time-btn');
+        if (quickAddButtons.length > 0) {
+          quickAddButtons.forEach(button => {
+            button.addEventListener('click', () => {
+              const timeToAdd = parseInt(button.dataset.time);
+              addTime(timer.id, timeToAdd);
+              hapticFeedback();
+            });
+          });
+        }
+        timerElement.appendChild(controls);
+        timersContainer.appendChild(timerElement);
+      });
+      // Reorder functionality
+      let dragSrcEl = null;
+      const timerItems = timersContainer.querySelectorAll('.timer-item');
+      timerItems.forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+          e.target.classList.add('dragging');
+          dragSrcEl = e.target;
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/html', e.target.innerHTML);
+        });
+        item.addEventListener('dragend', (e) => {
+          e.target.classList.remove('dragging');
+        });
+        item.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        });
+        item.addEventListener('drop', (e) => {
+          e.stopPropagation();
+          if (dragSrcEl !== e.target) {
+            const fromId = parseInt(dragSrcEl.dataset.id);
+            const toId = parseInt(e.target.dataset.id);
+            const fromIndex = timers.findIndex(t => t.id === fromId);
+            const toIndex = timers.findIndex(t => t.id === toId);
+            const [movedItem] = timers.splice(fromIndex, 1);
+            timers.splice(toIndex, 0, movedItem);
+            saveState();
+            renderTimers();
+          }
+        });
+      });
+    }
+
+    function addTime(id, secondsToAdd) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer || timer.isFinished || timer.isEditing) return;
+      timer.remaining += secondsToAdd;
+      timer.total += secondsToAdd;
+      if (timer.isRunning) {
+        timer.finishTime += secondsToAdd * 1000;
+      }
+      saveState();
+      renderTimers();
+    }
+
+    function showConfirmationModal(id) {
+      timerToDelete = id;
+      confirmationModal.classList.remove('hidden');
+    }
+
+    function hideConfirmationModal() {
+      timerToDelete = null;
+      confirmationModal.classList.add('hidden');
+    }
+
+    function showVisualizer(id) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer) return;
+      visualizerLabel.textContent = timer.label;
+      visualizerModal.classList.remove('hidden');
+      activeVisualizerId = id;
+      updateVisualizerDisplay(timer);
+    }
+
+    function hideVisualizer() {
+      visualizerModal.classList.add('hidden');
+      activeVisualizerId = null;
+    }
+
+    function updateVisualizerDisplay(timer) {
+      if (activeVisualizerId === timer.id) {
+        visualizerTimerDisplay.textContent = formatTime(timer.remaining);
+      }
+    }
+
+    function startTimer(id) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer || timer.isRunning) return;
+      pauseTimer(activeVisualizerId); // Pause other running timers if they exist
+      timer.isRunning = true;
+      timer.isFinished = false;
+      timer.finishTime = new Date().getTime() + (timer.mode === 'countdown' ? timer.remaining * 1000 : 0);
+      timer.startTime = new Date().getTime();
+      saveState();
+      renderTimers();
+      updateTitle();
+      if (activeVisualizerId) updateVisualizerDisplay(timer);
+      intervalIds[id] = setInterval(() => {
+        const now = new Date().getTime();
+        if (timer.mode === 'countdown') {
+          const newRemaining = Math.max(0, Math.floor((timer.finishTime - now) / 1000));
+          timer.remaining = newRemaining;
+          if (timer.remaining <= 0) {
+            clearInterval(intervalIds[id]);
+            delete intervalIds[id];
+            timer.isRunning = false;
+            timer.isFinished = true;
+            getAlarmSound(timer.soundUrl).play();
+            completedTimers.push({
+              label: timer.label,
+              notes: timer.notes,
+              timestamp: new Date()
+            });
+            saveState();
+            renderHistory();
+          }
+        } else { // countup mode
+          const elapsedSeconds = Math.floor((now - timer.startTime) / 1000);
+          timer.remaining = elapsedSeconds;
+        }
+        renderTimers();
+        updateTitle();
+        if (activeVisualizerId) updateVisualizerDisplay(timer);
+      }, 1000);
+    }
+
+    function pauseTimer(id) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer || !timer.isRunning) return;
+      clearInterval(intervalIds[id]);
+      delete intervalIds[id];
+      timer.isRunning = false;
+      if (timer.mode === 'countup') {
+        timer.total = timer.remaining;
+      }
+      saveState();
+      renderTimers();
+      updateTitle();
+    }
+
+    function resetTimer(id) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer) return;
+      clearInterval(intervalIds[id]);
+      delete intervalIds[id];
+      timer.isRunning = false;
+      timer.isFinished = false;
+      timer.remaining = timer.total;
+      timer.finishTime = null;
+      timer.startTime = null;
+      const sound = getAlarmSound(timer.soundUrl);
+      sound.pause();
+      sound.currentTime = 0;
+      saveState();
+      renderTimers();
+      updateTitle();
+      if (activeVisualizerId) updateVisualizerDisplay(timer);
+    }
+
+    function deleteTimer(id) {
+      pauseTimer(id);
+      if (activeVisualizerId === id) hideVisualizer();
+      timers = timers.filter(t => t.id !== id);
+      saveState();
+      renderTimers();
+      updateTitle();
+    }
+    // Event listeners
+    timerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const inputVal = timerInput.value.trim();
+      const match = inputVal.match(/^(\d+):(\d{2})\s*(.*)$/) || inputVal.match(/^(\d+)\s*m\s*(.*)$/);
+      let label = 'New Timer';
+      let minutes = 0;
+      let seconds = 0;
+      if (match) {
+        if (match[2]) { // Format "mm:ss"
+          minutes = parseInt(match[1]);
+          seconds = parseInt(match[2]);
+          label = match[3] || `Timer`;
+        } else { // Format "mm m"
+          minutes = parseInt(match[1]);
+          seconds = 0;
+          label = match[2] || `Timer`;
+        }
+      } else {
+        return; // Invalid format
+      }
+      addTimer(label, minutes, seconds);
+      timerInput.value = '';
+      hapticFeedback();
+    });
+    presetBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const label = e.target.dataset.label;
+        const minutes = parseInt(e.target.dataset.minutes);
+        addTimer(label, minutes, 0);
+        hapticFeedback();
+      });
+    });
+    volumeSlider.addEventListener('input', (e) => {
+      const volume = e.target.value;
+      for (const url in audioCache) {
+        audioCache[url].volume = volume;
+      }
+      saveState();
+    });
+    previewSoundBtn.addEventListener('click', () => {
+      const selectedSound = getAlarmSound(soundSelect.value);
+      selectedSound.pause();
+      selectedSound.currentTime = 0;
+      selectedSound.play();
+      hapticFeedback();
+    });
+    clearAllBtn.addEventListener('click', () => {
+      if (timers.length > 0) {
+        const confirmed = window.confirm("Are you sure you want to delete all timers?");
+        if (confirmed) {
+          timers.forEach(t => pauseTimer(t.id));
+          timers = [];
+          saveState();
+          renderTimers();
+          updateTitle();
+          hapticFeedback();
+        }
+      }
+    });
+    startAllBtn.addEventListener('click', () => {
+      timers.forEach(t => startTimer(t.id));
+      hapticFeedback();
+    });
+    pauseAllBtn.addEventListener('click', () => {
+      timers.forEach(t => pauseTimer(t.id));
+      hapticFeedback();
+    });
+    themeToggleBtn.addEventListener('click', () => {
+      body.classList.toggle('light-mode');
+      localStorage.setItem('theme', body.classList.contains('light-mode') ? 'light' : 'dark');
+      hapticFeedback();
+    });
+    fullscreenToggleBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+      hapticFeedback();
+    });
+    closeVisualizerBtn.addEventListener('click', () => {
+      hideVisualizer();
+      hapticFeedback();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === ' ' && timers.length > 0) {
+        e.preventDefault();
+        const firstTimer = timers[0];
+        if (firstTimer.isRunning) {
+          pauseTimer(firstTimer.id);
+        } else {
+          startTimer(firstTimer.id);
+        }
+      }
+    });
+    confirmDeleteBtn.addEventListener('click', () => {
+      if (timerToDelete !== null) {
+        deleteTimer(timerToDelete);
+        hideConfirmationModal();
+      }
+    });
+    cancelDeleteBtn.addEventListener('click', hideConfirmationModal);
+    window.addEventListener('load', loadState);
+  </script>
+</body>
+
+</html>
